@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Karate Shot Prediction</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to right, #1a1a1a, #333);
+            color: #fff;
+            text-align: center;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-top: 40px;
+            font-family: 'Impact', sans-serif;
+            color: #ffcc00;
+            text-shadow: 2px 2px #000;
+        }
+
+        #prediction {
+            font-size: 2rem;
+            color: #00bfff;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        .animation-container {
+            margin-top: 40px;
+            height: 240px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .animation {
+            display: none;
+            margin: 0 auto;
+            width: 220px;
+            height: 220px;
+            background-repeat: no-repeat;
+            background-size: contain;
+            background-position: center;
+            animation: fadeInScale 0.8s ease-out forwards;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            border-radius: 12px;
+        }
+
+        .kisamiZuki {
+            background-image: url("/static/kisami.gif");
+        }
+
+        .gyakuZuki {
+            background-image: url("/static/gyaku.gif");
+        }
+
+        @keyframes fadeInScale {
+            0% {
+                opacity: 0;
+                transform: scale(0.85);
+                box-shadow: 0 0 0 rgba(255, 215, 0, 0);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.05);
+                box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+                box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+            }
+        }
+
+        .effect-ring {
+            margin-top: 20px;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            border: 6px solid #ff0000;
+            animation: glow 1s infinite alternate;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        @keyframes glow {
+            from { box-shadow: 0 0 10px red; }
+            to { box-shadow: 0 0 30px red, 0 0 40px gold; }
+        }
+
+        .footer {
+            margin-top: auto;
+            padding: 20px;
+            font-size: 1rem;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <h1>🥋 Karate Shot Prediction</h1>
+    <div id="prediction">Waiting for prediction...</div>
+
+    <div class="animation-container">
+        <div id="kisamiZukiAnim" class="animation kisamiZuki"></div>
+        <div id="gyakuZukiAnim" class="animation gyakuZuki"></div>
+        <div id="effectRing" class="effect-ring" style="display: none;"></div>
+    </div>
+
+    <div class="footer">
+        Karate Classifier © 2025 | Dojo Mode Enabled
+    </div>
+
+    <script>
+        let lastPrediction = "";
+
+        function fetchPrediction() {
+            fetch('/prediction')
+                .then(response => response.json())
+                .then(data => {
+                    const prediction = data.prediction;
+                    document.getElementById('prediction').textContent = prediction;
+
+                    if (prediction !== lastPrediction) {
+                        updateUI(prediction);
+                        lastPrediction = prediction;
+                    }
+                })
+                .catch(err => {
+                    document.getElementById('prediction').textContent = 'Error fetching data';
+                    console.error(err);
+                });
+        }
+
+        function updateUI(prediction) {
+            const kisami = document.getElementById('kisamiZukiAnim');
+            const gyaku = document.getElementById('gyakuZukiAnim');
+            const ring = document.getElementById('effectRing');
+
+            // Hide all first
+            kisami.style.display = 'none';
+            gyaku.style.display = 'none';
+            ring.style.display = 'none';
+
+            function showAndAnimate(element, soundFile) {
+                element.style.display = 'block';
+                element.style.animation = 'none'; // Reset animation
+                void element.offsetWidth;        // Trigger reflow to restart animation
+                element.style.animation = 'fadeInScale 0.8s ease-out forwards';
+
+                ring.style.display = 'block';
+                playSound(soundFile);
+
+                setTimeout(() => {
+                    element.style.display = 'none';
+                    ring.style.display = 'none';
+                }, 2500); // Auto-hide after 2.5 seconds
+            }
+
+            if (prediction === 'kisamiZuki') {
+                showAndAnimate(kisami, 'kisami.mp3');
+            } else if (prediction === 'gyakuZuki') {
+                showAndAnimate(gyaku, 'gyaku.mp3');
+            }
+        }
+
+        function playSound(src) {
+            const audio = new Audio(`/static/${src}`);
+            audio.volume = 0.5;
+            audio.play();
+        }
+
+        setInterval(fetchPrediction, 1000);
+    </script>
+</body>
+</html>
